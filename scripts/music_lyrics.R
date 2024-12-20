@@ -1,6 +1,10 @@
-# Iron Maiden
+# Project: Music Lyrics
+# Purpose: Text mining of differnet music lyrics to understand what artists
+# sing about
 
 rm(list = ls())
+fldr <- "C:/GitHub/music_lyrics/"
+setwd(fldr)
 
 require(tidyverse)
 require(readr)
@@ -8,66 +12,109 @@ require(tidytext)
 require(wordcloud)
 data("stop_words")
 
-fldr <- "C:/GitHub/music_lyrics/"
-setwd(fldr)
+# loop over data folder to get a list of all combinations of artist-albums
+# that we need to extract the songs and lyrics from
+# return should be a list frame with colums: artist, album, song
 
-#fldr <- "C:/GitHub/maiden/data/number_of_the_beast/"
-#fldr <- "C:/GitHub/maiden/data/the_x_factor/"
-
-(artists <- list.dirs(path = "data/", 
-                   full.names = FALSE, 
-                   recursive = FALSE))
-
-(albumns <- list.dirs(path = paste0("data/",artists[1]), 
+# get all artists from data folder
+artists <- list.dirs(path = "data/", 
                       full.names = FALSE, 
-                      recursive = FALSE))
+                      recursive = FALSE)
 
-album_to_parse <- paste0(fldr, "data/", artists[1], "/", albumns[1])
+# now, for each artist get all albums
+artists_albums_df <- data.frame()
 
+for (i in 1:length(artists)){
+  #print(artists[i])
+  
+  albums <- list.dirs(path = paste0("data/",artists[i]), 
+                      full.names = FALSE, 
+                      recursive = FALSE)
+  
+  for (j in 1:length(albums)){
+   # print(albums[j])
+    
+    artist_album_row <- c(artists[i], albums[j])
+    names(artist_album_row) <- c("artist", "album")
+#    print(artist_album_row)
+    
+    artists_albums_df <- bind_rows(artists_albums_df,
+                                   artist_album_row)
+    
+  }
+}
 
-d <- data.frame()
+# for each album, get all the song names and lyrics into a df
+# df has artist, album, # song, song name, lyrics columns
 
-list.files(album_to_parse)
+lyrics_df <- data.frame()
 
-for (i in 1:length((list.files(fldr)))){
-  print(i)
-
-  song_path <- paste0(fldr, 
-                      list.files(fldr)[i])
+for (i in 1:nrow(artists_albums_df)){
+  #print(artists_albums_df[i,])
   
-  lyrics <- read_file(song_path)
+  album_path <- paste0(fldr, "data/",
+                       artists_albums_df[i,1], "/", #artist
+                       artists_albums_df[i,2]) #album
+  #print(album_path)
   
-  file_name <- list.files(fldr)[i]
+  songs <- list.files(album_path)
+  #print(songs)
   
-  song_num <- unlist(str_split(file_name, pattern = "_"))[1]
-  
-  song_name <- unlist(str_split(file_name, pattern = "_"))[2]
-  #song_name <- unlist(str_split(song_name, pattern = "."))[1]
-  
-  song_row <- c(song_num, song_name, lyrics)
-  names(song_row) <- c("song_num", "song_name", "lyrics")
-  
-  d <- bind_rows(d, song_row)
+  for (j in 1:length(songs)){
+    
+    song_num <- unlist(str_split(songs[j], pattern = "_"))[1]
+    
+    song_name <- unlist(str_split(songs[j], pattern = "_"))[2]
+    
+    #song_name <- songs[j]
+    
+    song_path <- paste0(album_path, "/", songs[j])
+    
+    lyrics <- read_file(song_path)
+    
+    print(song_path)
+    
+    lyric_row <- c(artists_albums_df[i,1],
+                   artists_albums_df[i,2],
+                   song_num,
+                   song_name,
+                   lyrics)
+    
+    names(lyric_row) <- c("artist", "album", "song_num", "song", "lyrics")
+    
+    lyrics_df <- bind_rows(lyrics_df, lyric_row)
+    
+  }
   
 }
 
-u <- d %>%
-  unnest_tokens(word, lyrics)
-
-u <- u %>%
+#tokenize all lyrics and clean
+lyrics_tokens_df <- lyrics_df %>%
+  unnest_tokens(word, lyrics) %>%
   anti_join(stop_words)
 
-u %>%
-  count(word, sort = TRUE)
+beast <- lyrics_tokens_df %>%
+  filter(artist == "Iron Maiden" & album == "Number of the Beast")
 
-u %>%
-  anti_join(stop_words) %>%
-  count(word) %>%
+xfactor <- lyrics_tokens_df %>%
+  filter(artist == "Iron Maiden" & album == "The X Factor")
+
+t1989 <- lyrics_tokens_df %>%
+  filter(artist == "Taylor Swift" & album == "1989")
+
+#word clouds
+beast %>%
+  count(word, sort = TRUE) %>%
   with(wordcloud(word, n, max.words = 50))
 
-#d <- tibble(song_num = character(), 
-#                song_name = character(), 
-#                lyrics =  character())
+xfactor %>%
+  count(word, sort = TRUE) %>%
+  with(wordcloud(word, n, max.words = 50))
+
+t1989 %>%
+  count(word, sort = TRUE) %>%
+  with(wordcloud(word, n, max.words = 50))
+
 
 
 # https://rpubs.com/rafrys/723764

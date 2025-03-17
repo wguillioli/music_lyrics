@@ -10,7 +10,12 @@ require(readr)
 require(tidytext)
 require(wordcloud)
 require(scales)
+require(reshape2)
 data("stop_words")
+
+afinn <- get_sentiments("afinn")
+bing <- get_sentiments("bing")
+nrc <- get_sentiments("nrc")
 
 # LOAD DATA
 
@@ -96,16 +101,108 @@ lyrics_words %>%
 lyrics_words %>%
   count(word, sort = TRUE)
 
-# most common words per album
-# voy terminar 1.3
+# plot top 10 most common words
 lyrics_words %>%
-  count(word, artist_album, sort = TRUE) %>%
-  ungroup() %>%
+  count(word, sort = TRUE) %>%
+  slice(1:10) %>%
+  mutate(word = reorder(word,n)) %>%
+  ggplot(aes(n,word)) +
+  geom_col()
+  
+# most common words per album
+lyrics_words %>% 
+  count(artist_album, word, sort = TRUE) %>%
   group_by(artist_album) %>%
-  slice_max(n, n = 7, with_ties = FALSE) %>%
-  ungroup() %>%
-  mutate(word = reorder(word, n))
+  slice(1:10) %>%
+  print(n = Inf)
+  
+# SENTIMENT ANALYSIS
 
+# plot sentiment change by album (calculated by line)
+albumns_sentiment <- lyrics_words %>%
+  inner_join(bing) %>%
+  count(artist_album, song_line_number, sentiment) %>%
+  pivot_wider(names_from = sentiment, values_from = n, values_fill = 0) %>% 
+  mutate(sentiment = positive - negative)
+
+ggplot(albumns_sentiment, aes(song_line_number, sentiment, fill = artist_album)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~artist_album, ncol = 2, scales = "free_x")
+
+
+# top sentiments per album
+nrc_filtered <- nrc %>%
+  filter(sentiment != "positive" & sentiment != "negative")
+
+lyrics_words %>%
+  inner_join(nrc_filtered, relationship = "many-to-many") %>%
+  count(artist_album, sentiment, sort = TRUE) %>%
+  group_by(artist_album) %>%
+  slice(1:5)
+
+# sadness is common, so what are the top sad words for each album
+nrc_sad <- get_sentiments("nrc") %>% 
+  filter(sentiment == "sadness")
+
+lyrics_words %>%
+  #filter(album == "Number of the Beast") %>%
+  inner_join(nrc_sad) %>%
+  count(artist_album, word, sort = TRUE) %>%
+  group_by(artist_album) %>%
+  slice_max(order_by = n, n = 5)
+
+# most common and positive words per album
+
+albums_to_parse <- unique(lyrics_words$artist_album)
+
+for (i in 1:length(albums_to_parse)){
+  print(i)
+  
+  lyrics_words_top <- lyrics_words %>%
+    filter(artist_album == albums_to_parse[i]) %>%
+    inner_join(bing) %>%
+    count(word, sentiment, sort = TRUE) %>%
+    ungroup()
+  
+  myplot <- lyrics_words_top %>%
+    group_by(sentiment) %>%
+    slice_max(n, n = 10, with_ties = FALSE) %>% 
+    ungroup() %>%
+    mutate(word = reorder(word, n)) %>%
+    ggplot(aes(n, word, fill = sentiment)) +
+    geom_col(show.legend = FALSE) +
+    facet_wrap(~sentiment, scales = "free_y") +
+    labs(x = "Contribution to sentiment",
+         y = NULL) +
+    ggtitle(albums_to_parse[i])
+  
+  print(myplot)
+  
+}
+
+# hallowed not positive necesariamente
+
+# word clouds by album
+set.seed(666)
+lyrics_words %>%
+  filter(artist_album == albums_to_parse[1]) %>%
+  count(word) %>%
+  with(wordcloud(word, n, max.words = 100))  
+
+set.seed(666)
+lyrics_words %>%
+  filter(artist_album == albums_to_parse[2]) %>%
+  count(word) %>%
+  with(wordcloud(word, n, max.words = 100))  
+
+set.seed(666)
+lyrics_words %>%
+  filter(artist_album == albums_to_parse[3]) %>%
+  count(word) %>%
+  with(wordcloud(word, n, max.words = 100))  
+
+# for each album, get sentiment score by song and name
+#voy
 
 
 

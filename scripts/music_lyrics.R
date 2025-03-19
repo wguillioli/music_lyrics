@@ -201,8 +201,29 @@ lyrics_words %>%
   count(word) %>%
   with(wordcloud(word, n, max.words = 100))  
 
-# for each album, get sentiment score by song and name
-#voy
+# plot / calculate most negative songs per album
+
+words_per_song <- lyrics_words %>%
+  group_by(artist_album, song) %>%
+  summarise(words = n())
+
+negative <- bing %>% 
+  filter(sentiment == "negative")
+
+negative_words_per_song <- lyrics_words %>%
+  semi_join(negative)
+
+negative_ratio <- negative_words_per_song %>%
+  group_by(artist_album, song) %>%
+  summarise(negativewords =n()) %>%
+  left_join(words_per_song, by = c("artist_album", "song")) %>%
+  mutate(ratio = round(negativewords/words, 2)) %>%
+  ungroup()
+
+ggplot(negative_ratio, aes(song, ratio, fill = artist_album)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~artist_album, ncol = 1, scales = "free_y") +
+  coord_flip()
 
 
 

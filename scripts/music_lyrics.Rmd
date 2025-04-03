@@ -1,22 +1,32 @@
-# Project: Music Lyrics
-# Purpose: Text mining of different music lyrics to get insights on their singing
+---
+title: "What do Iron Maiden, Taylor Swift and Pharrell Williams have in common? 
+        A primer on text mining.^[The data and scripsts posted here: https://github.com/wguillioli]"
+author: "Walter Guillioli"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output:
+  pdf_document:
+    fig_caption: yes
+  html_document:
+    df_print: paged
+---
 
-rm(list = ls())
-fldr <- "C:/GitHub/music_lyrics/"
-setwd(fldr)
+## Introduction 
+I love music and data science. Purpose of this paper is to apply main text analytics techniques to explore lyrics from different authors.
 
-# Custom ggplot theme
-cust_theme <- theme_minimal() +
-  theme(panel.grid.major = element_line(color = "#e1e1e1",  linetype = "dotted"),
-        panel.grid.minor = element_blank(),
-        legend.position  = "bottom",
-        legend.key       = element_blank())
+We will see things like sentiment analysis, word clouds, topic model and network bigrams.
 
-blue_palette <- c("#004f79", "#0085ca",  "#66b5df", "#474747","#eeeeee")
+Purpose is to process lyrics and get idea of what they sign without reading lyrics.
 
-cbPalette <- c("#CC6666","#E69F00", "#999999", "#56B4E9", "#009E73", "#F0E442",
-               "#0072B2", "#D55E00", "#CC79A7")
-  
+A key companino for this was the book tidy text oby x (add link)
+
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE, 
+                      out.width = '80%', 
+                      fig.align = "center") 
+
+rm(list = ls()) #clean environment
 
 require(tidyverse)
 require(readr)
@@ -30,16 +40,37 @@ library(ggraph)
 require(tm)
 require(widyr)
 require(topicmodels)
-data("stop_words")
 
+data("stop_words")
 afinn <- get_sentiments("afinn")
 bing <- get_sentiments("bing")
 nrc <- get_sentiments("nrc")
 
-# LOAD DATA
+#wd <- "C:\\GitHub\\heart_disease\\"
+
+fldr <- "C:/GitHub/music_lyrics/"
+
+
+# Custom ggplot theme
+cust_theme <- theme_minimal() +
+  theme(panel.grid.major = element_line(color = "#e1e1e1",  linetype = "dotted"),
+        panel.grid.minor = element_blank(),
+        legend.position  = "bottom",
+        legend.key       = element_blank())
+
+cbPalette <- c("#E69F00", "#999999", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7",
+               "#CC6666", "#9999CC", "#66CC99") #2nd line is extra
+
+blue_palette <- c("#004f79", "#0085ca",  "#66b5df", "#474747","#eeeeee")
+
+
+```
+
+
+```{r load_data, include=FALSE}
 
 # get all artists from data folder
-artists <- list.dirs(path = "data/", 
+artists <- list.dirs(path = paste0(fldr, "data/"), 
                      full.names = FALSE, 
                      recursive = FALSE)
 
@@ -47,7 +78,7 @@ artists <- list.dirs(path = "data/",
 artists_albums_df <- tibble()
 
 for (i in 1:length(artists)){
-  albums <- list.dirs(path = paste0("data/",artists[i]), 
+  albums <- list.dirs(path = paste0(fldr, "data/", artists[i]), 
                       full.names = FALSE, 
                       recursive = FALSE)
   
@@ -93,7 +124,33 @@ for (i in 1:nrow(artists_albums_df)){
   }
 }
 
-# DATA PREP
+lyrics_df %>%
+  group_by(artist_album) %>%
+  tally()
+
+```
+
+
+## Data and Methods
+Lyrics from 4 albums were dowloaded from the azlyrics.com website. They were manually copy pasted to text documents and read into R.
+Two albums for Iron Maiden - Number of the Beast (1982) and X-Factor (1995). For Taylor Swift, 1989 from 2014. And Pharrell Williams album x from x.
+
+Data was read from txt into data frame. The techniques applied where: list all of them.
+
+48 songs were analyzed from these albums: Iron Maiden: Number of the Beast	9, 		
+Iron Maiden: X Factor	11, Pharrell Williams: GIRL	12, Taylor Swift: 1989	16.
+
+Table 1 shows the names of the songs of each album.
+
+```{r print_songs, echo=FALSE}
+
+print(lyrics_df)
+
+```
+
+
+
+```{r data_prep, include=FALSE}
 
 # tokenize lyrics per sentence
 lyrics_sentences <- lyrics_df %>%
@@ -112,15 +169,31 @@ lyrics_words <- lyrics_sentences %>%
 lyrics_words <- lyrics_words %>%
   anti_join(stop_words)
 
+
+
+
+```
+
+The lyrics were split into invidual words for analysis and common words (stop words) like a, on, the were removed. Table 2  shows number of words for analysis:
+
+```{r print_words, echo=FALSE}
+
 # print # of words per album
 lyrics_words %>%
   group_by(artist_album) %>%
   summarise(number_of_words = n())
 
-# most common words across all albums
-# a mix of love and war
-lyrics_words %>%
-  count(word, sort = TRUE)
+```
+
+## Results
+
+To analyze text we start with x, then do y and then z.
+
+### Top words used on the lyrics
+
+We can start by plotting the top 10 most common words across all albums.
+
+```{r plot_top10, echo=FALSE}
 
 # plot top 10 most common words
 lyrics_words %>%
@@ -128,18 +201,43 @@ lyrics_words %>%
   slice(1:10) %>%
   mutate(word = reorder(word,n)) %>%
   ggplot(aes(n,word)) +
-  geom_col()
-  
+  geom_col(fill = blue_palette[2]) +
+  cust_theme
+
+```
+
+This is relatively interesting but not useful since we know some artists use more words than others. So let's do the same but by album.
+
+```{r plot_top_album, echo=FALSE}
+
 # most common words per album
 lyrics_words %>% 
   count(artist_album, word, sort = TRUE) %>%
   group_by(artist_album) %>%
-  slice(1:10) %>%
-  print(n = Inf)
+  slice_max(n, n = 10, with_ties = FALSE) %>% 
+    ungroup() %>%
+    mutate(word = reorder(word, n)) %>%
+    ggplot(aes(n, word, fill = artist_album)) +
+    geom_col(fill = blue_palette[2],
+             show.legend = FALSE) +
+    facet_wrap(~artist_album, scales = "free") +
+    labs(x = NULL,
+         y = NULL) +
+  cust_theme
+
+ 
 
 # add plot
-  
-# SENTIMENT ANALYSIS
+
+```
+
+### Sentiment 
+The top words above give an idea of what they talk about but it's just the start. The next thing is to see if they sing about happy, sad or angry stuff. Probably a bit of everything. 
+
+We start with a simple analysis to see if the sentiment is positive or negative. In the chart below we see the sentiment evolution of the albums as the album progress where each bar represents a line in the song. Also note that number of lines varies and Maiden sings with less words.   
+
+
+```{r plot_sentiment, echo=FALSE}
 
 # plot sentiment change by album (calculated by line)
 albumns_sentiment <- lyrics_words %>%
@@ -149,10 +247,17 @@ albumns_sentiment <- lyrics_words %>%
   mutate(sentiment = positive - negative)
 
 ggplot(albumns_sentiment, aes(song_line_number, sentiment, fill = artist_album)) +
-  geom_col(show.legend = FALSE) +
+  geom_col(fill = blue_palette[2],
+           show.legend = FALSE) +
   facet_wrap(~artist_album, ncol = 2, scales = "free_x") +
   cust_theme
+```
 
+Several points to highlight from this chart. Iron Maiden tends to be very negative while Taylor Swift is mostly negative with some exceptions. Pharrell Williams on the contrary seems to be a very happy and uplifting singer. We will explore why and more in the next section.  
+
+Another thing we can do is to see the sentiment for each album. Maiden is motly about fear, sadness and anger. While Pharrell sings about Joy and Trust. While Taylor seems to be happier but sometimes is inundated with sadness and fear. As we will see later this is a diffrent fear than the one Maiden shows.
+
+```{r plot_sent_album, echo=FALSE}
 
 # top sentiments per album
 nrc_filtered <- nrc %>%
@@ -163,6 +268,29 @@ lyrics_words %>%
   count(artist_album, sentiment, sort = TRUE) %>%
   group_by(artist_album) %>%
   slice(1:5)
+
+lyrics_words %>% 
+  inner_join(nrc_filtered, relationship = "many-to-many") %>%
+  count(artist_album, sentiment, sort = TRUE) %>%
+  #count(artist_album, word, sort = TRUE) %>%
+  group_by(artist_album) %>%
+  slice_max(n, n = 5, with_ties = FALSE) %>% 
+    ungroup() %>%
+    mutate(sentiment = reorder(sentiment, n)) %>%
+    ggplot(aes(n, sentiment, fill = artist_album)) +
+    geom_col(fill = blue_palette[2],
+             show.legend = FALSE) +
+    facet_wrap(~artist_album, scales = "free") +
+    labs(x = NULL,
+         y = NULL) +
+  cust_theme
+
+```
+
+
+
+
+
 
 # sadness is common, so what are the top sad words for each album
 nrc_sad <- get_sentiments("nrc") %>% 
@@ -432,3 +560,31 @@ top_terms %>%
   geom_col(show.legend = FALSE) +
   facet_wrap(~ topic, scales = "free") +
   scale_y_reordered()
+
+## Conclusions
+
+## References
+
+## Appendix
+
+
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

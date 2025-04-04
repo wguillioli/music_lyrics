@@ -24,7 +24,9 @@ A key companino for this was the book tidy text oby x (add link)
 
 knitr::opts_chunk$set(echo = TRUE, 
                       out.width = '80%', 
-                      fig.align = "center") 
+                      fig.align = "center",
+                      warning = FALSE,
+                      message = FALSE) 
 
 rm(list = ls()) #clean environment
 
@@ -140,11 +142,13 @@ Data was read from txt into data frame. The techniques applied where: list all o
 48 songs were analyzed from these albums: Iron Maiden: Number of the Beast	9, 		
 Iron Maiden: X Factor	11, Pharrell Williams: GIRL	12, Taylor Swift: 1989	16.
 
-Table 1 shows the names of the songs of each album.
 
-```{r print_songs, echo=FALSE}
+
+```{r print_songs, include=FALSE}
 
 print(lyrics_df[,c(1,2,5)])
+print(lyrics_df[,c(5)])
+
 
 ```
 
@@ -170,20 +174,56 @@ lyrics_words <- lyrics_words %>%
   anti_join(stop_words)
 
 
-
-
 ```
 
 The lyrics were split into invidual words for analysis and common words (stop words) like a, on, the were removed. Table 2  shows number of words for analysis:
 
-```{r print_words, echo=FALSE}
+```{r print_words, include=FALSE}
 
 # print # of words per album
 lyrics_words %>%
   group_by(artist_album) %>%
-  summarise(number_of_words = n())
+  summarise(number_of_songs = max(song_num),
+            number_of_words = n())
 
 ```
+
+**Table X** \
+*Number of songs and words per album*
+
+Album |# Songs |# Words
+:-----|:-------|:------
+Iron Maiden: Number of the Beast |9 |800
+Iron Maiden: X Factor |11 |871
+Pharrell Williams: GIRL |12 |1437
+Taylor Swift: 1989 |16 |2000
+
+Table 1 shows the names of the songs of each album.
+
+\newpage
+**Table X** \
+*Songs per album*
+
+Taylor Swift: 1989        |Pharrell Williams: GIRL    |Iron Maiden: Sign of the Cross   |Iron Maiden: Number of the Beast
+:-------------------------|:--------------------------|:-------------------------------|:--------------------------------
+Welcome to NY |Marilyn Monroe |Sign of the Cross | Invaders
+Blank Space         |Brand New      |Lord of the Flies | Children Of the Damned
+Style	| unter        |Man on the Ledge |The Prisoner
+Out in the Woods    |Gush            |Fortunes of War   |22 Acacia Avenue
+All you had to... |Happy |Look for the Truth |Number Of The Beast
+Shake it off |Come Get It Bae |The Aftermath |Run to the Hills
+I wish you would |Gust of Wind |Judgment of Heaven |Gangland
+Bad blood |Lost Queen |Blood on the... |Hallowed be thy Name
+Wildest Dreams |Freq |Edge of Darkness |Total Eclipse
+How you get the girl |Know who you are |2AM	
+This love	|It Girl |The Unbeliever	
+I know places |Smile		
+Clean |			
+Wonderland |			
+You arein love |			
+New romantics |			
+
+
 
 ## Results
 
@@ -191,20 +231,7 @@ To analyze text we start with x, then do y and then z.
 
 ### Top words used on the lyrics
 
-We can start by plotting the top 10 most common words across all albums.
-
-```{r plot_top10, echo=FALSE}
-
-# plot top 10 most common words
-lyrics_words %>%
-  count(word, sort = TRUE) %>%
-  slice(1:10) %>%
-  mutate(word = reorder(word,n)) %>%
-  ggplot(aes(n,word)) +
-  geom_col(fill = blue_palette[2]) +
-  cust_theme
-
-```
+We simply remove stop words and count and get this. Alternative we could use a more advanced way via tfidf to appendix
 
 This is relatively interesting but not useful since we know some artists use more words than others. So let's do the same but by album.
 
@@ -220,56 +247,20 @@ lyrics_words %>%
     ggplot(aes(n, word, fill = artist_album)) +
     geom_col(fill = blue_palette[2],
              show.legend = FALSE) +
-    facet_wrap(~artist_album, scales = "free") +
+    facet_wrap(~artist_album, scales = "free", ncol = 2) +
     labs(x = NULL,
          y = NULL) +
   cust_theme
 
  
-
-# add plot
-
 ```
 
-Alternative we could use a more advanced way via tfidf and these are the results. so discuss and pick one and / or send one to appendix.
-
-
-```{r print_tfidf, echo=FALSE}
-#
-# tf-idf
-
-album_words <- lyrics_df %>%
-  unnest_tokens(word, lyrics) %>%
-  count(artist_album, word, sort = TRUE)
-
-total_words <- album_words %>% 
-  group_by(artist_album) %>% 
-  summarize(total = sum(n))
-
-album_words <- left_join(album_words, total_words)
-
-album_tf_idf <- album_words %>%
-  bind_tf_idf(word, artist_album, n)
-
-#album_tf_idf %>%
-#  select(-total) %>%
-#  arrange(desc(tf_idf))
-
-album_tf_idf %>%
-  group_by(artist_album) %>%
-  slice_max(tf_idf, n = 10) %>%
-  ungroup() %>%
-  ggplot(aes(tf_idf, fct_reorder(word, tf_idf), fill = artist_album)) +
-  geom_col(show.legend = FALSE, fill = blue_palette[4]) +
-  facet_wrap(~artist_album, ncol = 2, scales = "free") +
-  labs(x = "tf-idf", y = NULL) + 
-  theme_minimal()
-
-```
-
-More informally we can see some wordclouds to get an idea of what they talk. This just confirms what we saw above in more detail.
 
 ```{r print_clous, echo=FALSE}
+
+#More informally we can see some wordclouds to get an idea of what they talk. This #just confirms what we saw above in more detail.
+
+
 # word clouds by album
 set.seed(666)
 #lyrics_words %>%
@@ -300,7 +291,7 @@ set.seed(666)
 
 
 
-### Sentiment 
+### Sentiment evolution in the album
 The top words above give an idea of what they talk about but it's just the start. The next thing is to see if they sing about happy, sad or angry stuff. Probably a bit of everything. 
 
 We start with a simple analysis to see if the sentiment is positive or negative. In the chart below we see the sentiment evolution of the albums as the album progress where each bar represents a line in the song. Also note that number of lines varies and Maiden sings with less words.   
@@ -313,16 +304,39 @@ albumns_sentiment <- lyrics_words %>%
   inner_join(bing) %>%
   count(artist_album, song_line_number, sentiment) %>%
   pivot_wider(names_from = sentiment, values_from = n, values_fill = 0) %>% 
-  mutate(sentiment = positive - negative)
+  mutate(sentiment = positive - negative) %>%
+  mutate(pos = sentiment >= 0 )
 
-ggplot(albumns_sentiment, aes(song_line_number, sentiment, fill = artist_album)) +
-  geom_col(fill = blue_palette[2],
-           show.legend = FALSE) +
+ggplot(albumns_sentiment, aes(song_line_number, sentiment, fill = pos)) +
+  geom_col(show.legend = FALSE) +
   facet_wrap(~artist_album, ncol = 2, scales = "free_x") +
   cust_theme
+
+#ggplot(albumns_sentiment, aes(song_line_number, sentiment, fill = pos)) +
+ # geom_col(fill = blue_palette[2],
+  #         show.legend = FALSE) +
+  #facet_wrap(~artist_album, ncol = 2, scales = "free_x") +
+  #cust_theme
+
+#ggplot(data=albumns_sentiment, aes(x=song_line_number, y=sentiment, #group=artist_album, color=artist_album)) +
+#  geom_line(show.legend = FALSE)+
+#  #geom_point(show.legend = FALSE) +
+#  theme_minimal() +
+#  theme(legend.position="bottom")
+
+#ggplot(albumns_sentiment, aes(song_line_number, sentiment, fill = artist_album)) +
+ # geom_line(color = blue_palette[2],
+  #         show.legend = FALSE) +
+  #facet_wrap(~artist_album, ncol = 2) +
+  #cust_theme
+
+
 ```
 
 Several points to highlight from this chart. Iron Maiden tends to be very negative while Taylor Swift is mostly negative with some exceptions. Pharrell Williams on the contrary seems to be a very happy and uplifting singer. We will explore why and more in the next section.  
+
+
+### Main feelings from each album
 
 Another thing we can do is to see the sentiment for each album. Maiden is motly about fear, sadness and anger. While Pharrell sings about Joy and Trust. While Taylor seems to be happier but sometimes is inundated with sadness and fear. As we will see later this is a diffrent fear than the one Maiden shows.
 
@@ -332,11 +346,11 @@ Another thing we can do is to see the sentiment for each album. Maiden is motly 
 nrc_filtered <- nrc %>%
   filter(sentiment != "positive" & sentiment != "negative")
 
-lyrics_words %>%
-  inner_join(nrc_filtered, relationship = "many-to-many") %>%
-  count(artist_album, sentiment, sort = TRUE) %>%
-  group_by(artist_album) %>%
-  slice(1:5)
+#lyrics_words %>%
+#  inner_join(nrc_filtered, relationship = "many-to-many") %>%
+#  count(artist_album, sentiment, sort = TRUE) %>%
+#  group_by(artist_album) %>%
+#  slice(1:5)
 
 lyrics_words %>% 
   inner_join(nrc_filtered, relationship = "many-to-many") %>%
@@ -355,6 +369,8 @@ lyrics_words %>%
   cust_theme
 
 ```
+
+### What are they afraid of?
 
 A common feeling across all albums is the sentiment of fear. So next we explore the top fear words of each album. 
 
@@ -387,7 +403,9 @@ So even though they are all fear words, the meaning is different. TAke Iron Maid
 ### Positive and negative words 
 Exploring the words further we can take a look at the most positive and negative words per album. 
 
-```{r pos_neg, echo=FALSE}
+```{r pos_neg, include=FALSE}
+
+# LEAVE OTHER FOR NOW
 lyrics_words %>%
   inner_join(bing) %>%
   count(artist_album, sentiment, word, sort = TRUE) %>%
@@ -416,8 +434,8 @@ lyrics_words %>%
 
 albums_to_parse <- unique(lyrics_words$artist_album)
 
-for (i in 1:length(albums_to_parse)){
-  print(i)
+# function that takes an album and prints top 10 pos/neg words
+print_pos_neg_words <- function(i){
   
   lyrics_words_top <- lyrics_words %>%
     filter(artist_album == albums_to_parse[i]) %>%
@@ -431,7 +449,8 @@ for (i in 1:length(albums_to_parse)){
     ungroup() %>%
     mutate(word = reorder(word, n)) %>%
     ggplot(aes(n, word, fill = sentiment)) +
-    geom_col(show.legend = FALSE) +
+    geom_col(show.legend = FALSE,
+             fill = blue_palette[1]) +
     facet_wrap(~sentiment, scales = "free_y") +
     labs(x = "Contribution to sentiment",
          y = NULL) +
@@ -441,6 +460,14 @@ for (i in 1:length(albums_to_parse)){
   print(myplot)
   
 }
+
+print_pos_neg_words(1) #beast
+
+print_pos_neg_words(3) # pharrel
+
+
+
+
 
 ```
 
@@ -452,7 +479,7 @@ Pharrell, appreciate positivism with woo (part of woo-hoo) and in general talks 
 Taylor we can see that likes to talk about love - good or bad? and shake is that from shake what? can be from shake the body soo...
 
 
-### Sentiment of each song
+### How negative is each song?
 
 A next obvious quesitno is beyond words. How does each song contribute to the feelings shows above. For that we calculate a negative ratio of each song which is basically # of negative words over total words so a higher number means a negative song. results are this.
 
@@ -507,8 +534,8 @@ lyrics_bigrams <- lyrics_df %>%
   unnest_tokens(bigram, lyrics, token = "ngrams", n = 2) %>%
   filter(!is.na(bigram))
 
-lyrics_bigrams %>%
-  count(bigram, sort = TRUE)
+#lyrics_bigrams %>%
+# count(bigram, sort = TRUE)
 
 bigrams_separated <- lyrics_bigrams %>%
   separate(bigram,c("word1", "word2"), sep = " ")
@@ -517,8 +544,8 @@ bigrams_filtered <- bigrams_separated %>%
   filter(!word1 %in% stop_words$word) %>%
   filter(!word2 %in% stop_words$word)
 
-bigrams_filtered %>% 
-  count(word1, word2, sort = TRUE)
+#bigrams_filtered %>% 
+#  count(word1, word2, sort = TRUE)
 
 bigrams_united <- bigrams_filtered %>%
   unite(bigram, word1, word2, sep = " ")
@@ -579,14 +606,11 @@ plot_graph <- function(album_to_plot, num){
 ```
 
 
-```{r}
-plot_graph(albums_to_parse[1], 1)
+```{r plotsnw, echo=FALSE}
+plot_graph(albums_to_parse[1], 1) #beast
 
-plot_graph(albums_to_parse[2], 1)
 
-plot_graph(albums_to_parse[3], 2)
-
-plot_graph(albums_to_parse[4], 3)
+plot_graph(albums_to_parse[4], 3) #taylor
 ```
 taylor, she talks about all she;s gonna do as is shake. but more context is needed cause paople are gonna hate her. another interesting, is she's asking about stay with someone with bad blood.
 
@@ -595,7 +619,7 @@ for williams we can see girl connected to dirty gilr and hey girl and hey baby s
 Maiden beast, see how more context is given. run is connected to varios words and when reading the lyrics one can see that its about running to the hills (escaping), and run for your lives (escaping). 
 
 
-### Negated words
+### Impact of hegated words
 
 Another importantthing to consider is that happy when doing one word is treated as positive so let's say "i am happy" and "i am not happy" will read happy and that is that. so that is why combining two words give context. so it's intersting to see what words were kind of misclassified with negated words before. so i see what words were c("not", "no", "never", "without") after thse ones and how much they misled the scores.
 
@@ -628,11 +652,77 @@ so for example, worse its the most negative here. but how about it say i am not 
 
 let's take like, if it's never like then we have a problem.
 
-### Topic modeling 
+### A note on topic modeling 
 
-Finally imagine we didn't have the albums. we just knew songs. well there is a way to group them by "topic". so I ovbiously tune the algo to 4 topics.  
+Finally imagine we didn't have the albums. we just knew songs. well there is a way to group them by "topic". so I ovbiously tune the algo to 4 topics. see appendix  
 
 
+
+
+## Conclusions
+1. one word analysis can be misleading
+
+
+## References
+
+## Appendix
+
+\newpage
+Appendix 1: TFIDF
+
+```{r print_tfidf, echo=FALSE}
+#
+# tf-idf
+
+album_words <- lyrics_df %>%
+  unnest_tokens(word, lyrics) %>%
+  count(artist_album, word, sort = TRUE)
+
+total_words <- album_words %>% 
+  group_by(artist_album) %>% 
+  summarize(total = sum(n))
+
+album_words <- left_join(album_words, total_words)
+
+album_tf_idf <- album_words %>%
+  bind_tf_idf(word, artist_album, n)
+
+#album_tf_idf %>%
+#  select(-total) %>%
+#  arrange(desc(tf_idf))
+
+album_tf_idf %>%
+  group_by(artist_album) %>%
+  slice_max(tf_idf, n = 10) %>%
+  ungroup() %>%
+  ggplot(aes(tf_idf, fct_reorder(word, tf_idf), fill = artist_album)) +
+  geom_col(show.legend = FALSE, fill = blue_palette[4]) +
+  facet_wrap(~artist_album, ncol = 2, scales = "free") +
+  labs(x = "tf-idf", y = NULL) + 
+  theme_minimal()
+
+```
+
+\newpage
+Appendix 2
+
+```{r}
+print_pos_neg_words(2)
+print_pos_neg_words(4)
+```
+
+\newpage
+Appendix 3
+
+```{r}
+plot_graph(albums_to_parse[2], 1) #xf
+
+plot_graph(albums_to_parse[3], 2)
+
+```
+
+\newpage
+Appendix 4
 ```{r topic, echo=FALSE}
 # LDA topic model on albums
 
@@ -669,15 +759,4 @@ top_terms %>%
 ```
 
 if I compre this charts with above it would be easy to identify the 4 albums with these 4 topics.
-
-
-## Conclusions
-1. one word analysis can be misleading
-
-
-## References
-
-## Appendix
-
-
 

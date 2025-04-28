@@ -785,6 +785,10 @@ Due to space constraints, we only present the network for two albums. We observe
 
 When contrasting these results with Figure 9, we observe that Taylor Swift's word networks revolve around more personal and adventurous themes, such as "wanna hug", "lost queen", and other similarly emotive expressions.
 
+### Impact of Negated Words
+
+Finally, it is crucial to consider the impact of negated words on sentiment analysis. For example, the word happy is classified as positive when analyzed in isolation, but its meaning can change significantly in certain contexts. For instance, "I am happy" is positive, while "I am not happy" should be interpreted as negative. However, sentiment analysis tools often misclassify such negated phrases by treating happy as positive regardless of context. Therefore, it’s important to identify words that are preceded by negators such as "not", "no", "never", or "without" and examine how they may mislead sentiment scores.
+
 \begin{center}
 Figure 8: Network of Top Bi-grams for Iron Maiden's Number of the Beast Album
 \end{center} 
@@ -814,9 +818,7 @@ plot_graph(albums_to_parse[3], 1)
 
 ```
 
-### Impact of Negated Words
 
-Finally, it is crucial to consider the impact of negated words on sentiment analysis. For example, the word happy is classified as positive when analyzed in isolation, but its meaning can change significantly in certain contexts. For instance, "I am happy" is positive, while "I am not happy" should be interpreted as negative. However, sentiment analysis tools often misclassify such negated phrases by treating happy as positive regardless of context. Therefore, it’s important to identify words that are preceded by negators such as "not", "no", "never", or "without" and examine how they may mislead sentiment scores.
 
 As shown in Figure 10, the word worse is classified as highly negative, but in the context of "I am not worse", it would actually convey a more positive sentiment. This issue applies to other words as well. A clear example is the word better, which is positive on its own, but if preceded by "not", it takes on a negative meaning.
 

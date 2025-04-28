@@ -1,6 +1,7 @@
 ---
-title: "What is Iron Maiden, Taylor Swift and Pharrell Williams singing? 
-        A primer on text mining.^[The data and scripsts posted here: https://github.com/wguillioli]"
+title: "What Are Iron Maiden, Taylor Swift, and Pharrell Williams Singing About?"
+subtitle: "A Primer on Using Text Mining Techniques to Analyze Music Lyrics
+^[The data and scripts posted here: https://github.com/wguillioli/music_lyrics]"
 author: "Walter Guillioli"
 date: "`r format(Sys.time(), '%B %d, %Y')`"
 output:
@@ -8,22 +9,23 @@ output:
     fig_caption: yes
   html_document:
     df_print: paged
+    
 ---
 
 ## Introduction 
-I love music and data science. Purpose of this paper is to apply main text analytics techniques to explore lyrics from different authors.
+Do bands like Iron Maiden only sing about the devil? Does Taylor Swift only sing about love? Does Pharrell Williams only sing about happiness? Is there a way to apply text-mining techniques to understand song lyrics without reading them all? 
 
-We will see things like sentiment analysis, word clouds, topic model and network bigrams.
+I am deeply passionate about music and data science, and these questions sparked the motivation for this research. The purpose of this paper is to apply key text analytics techniques to explore and compare the lyrics of different artists. I intentionally selected Iron Maiden — my favorite band since I was 10 years old — alongside very different artists to create a contrasting analysis. 
 
-Purpose is to process lyrics and get idea of what they sign without reading lyrics.
+In this article, I apply basic text-mining techniques to these lyrics. I begin by identifying the most common words and then examine the emotional tone of these words. Next, I explore how individual words contribute to the overall emotional landscape of an album. Finally, I investigate how words combine together to provide deeper insights, highlighting some of the limitations of relying solely on single-word or unigram analysis. 
 
-A key companino for this was the book tidy text oby x (add link)
+This file is a summary. To view the code and data , see this [Github repo](https://github.com/wguillioli/music_lyrics).
 
 
 ```{r setup, include=FALSE}
 
 knitr::opts_chunk$set(echo = TRUE, 
-                      out.width = '80%', 
+                      out.width = '100%', 
                       fig.align = "center",
                       warning = FALSE,
                       message = FALSE) 
@@ -60,10 +62,36 @@ cust_theme <- theme_minimal() +
         legend.position  = "bottom",
         legend.key       = element_blank())
 
-cbPalette <- c("#E69F00", "#999999", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7",
-               "#CC6666", "#9999CC", "#66CC99") #2nd line is extra
 
-blue_palette <- c("#004f79", "#0085ca",  "#66b5df", "#474747","#eeeeee")
+palette <- c("#b8b8b8", "#1a80bb", "#8cc5e3", "#a00000")
+            
+
+# just horizontal line
+theme_mine <- theme_minimal() +
+  theme(panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank(),
+            panel.background = element_blank(),
+            axis.line.x = element_line(color = palette[1]))
+
+# full grid
+theme_mine2 <- theme_minimal() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        panel.border = element_rect(color = palette[1]))
+
+
+#cbPalette <- c("#E69F00", "#999999", "#56B4E9", "#0072B2", "#CC6666", "#66CC99") 
+#cbPalette[1]
+
+
+#cbPalette <- c("#E69F00", "#999999", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7",
+#               "#CC6666", "#9999CC", "#66CC99") #2nd line is extra
+
+#blue_palette <- c("#004f79", "#0085ca",  "#66b5df", "#474747","#eeeeee")
+
+
+
 
 
 ```
@@ -134,20 +162,29 @@ lyrics_df %>%
 
 
 ## Data and Methods
-Lyrics from 4 albums were dowloaded from the azlyrics.com website. They were manually copy pasted to text documents and read into R.
-Two albums for Iron Maiden - Number of the Beast (1982) and X-Factor (1995). For Taylor Swift, 1989 from 2014. And Pharrell Williams album x from x.
+The dataset consists of lyrics from four different albums, downloaded from azlyrics.com. Each song was saved into a text file and subsequently loaded into a data frame for analysis. The four albums, comprising a total of 48 songs, include two albums by Iron Maiden, one by Taylor Swift, and one by Pharrell Williams. Refer to Table 1 for an overview. 
 
-Data was read from txt into data frame. The techniques applied where: list all of them.
+The data captured for each song includes the artist's name, album name, song number, song title, and the complete lyrics. See Table 2. 
 
-48 songs were analyzed from these albums: Iron Maiden: Number of the Beast	9, 		
-Iron Maiden: X Factor	11, Pharrell Williams: GIRL	12, Taylor Swift: 1989	16.
+The lyrics were then tokenized — first into lines, and subsequently into words. Common words that typically do not add semantic value (stop words) were removed from the dataset. 
 
+Most of the analysis was conducted at the word level. I began by counting the most frequent words in each album to gain an initial understanding of the language commonly used by each artist. This was approached in two ways:
+1. A simple count of word frequencies.
+2. The use of the TF-IDF (Term Frequency–Inverse Document Frequency) statistic that highlights words that are significant to a particular album but infrequent across others. 
+
+Each word was then mapped to a sentiment dictionary to classify the emotional tone associated with it. For example, the word happy is associated with anticipation, joy, positivity, and trust, while unhappy maps to anger, disgust, negativity, and sadness. 
+
+As will be shown in the results, all artists share a particular emotional theme — fear. We explored this further by identifying the top words contributing to this sentiment for each artist. 
+
+Additionally, words were categorized as either positive or negative. This served two purposes: first, to identify the top positive and negative words for each artist; and second, to calculate a negativity ratio at the song level. This ratio is defined as the number of negative words divided by the total number of words in the song, where a higher value indicates a more negative song. We also chart the evolution of sentiment across the album's tracklist to understand how the listener's emotional journey progresses. 
+
+Finally, we briefly explored lyrics at the level of word pairs (bigrams), addressing some of the limitations inherent in single-word (unigram) analysis.
 
 
 ```{r print_songs, include=FALSE}
 
-print(lyrics_df[,c(1,2,5)])
-print(lyrics_df[,c(5)])
+#print(lyrics_df[,c(1,2,5)])
+#print(lyrics_df[,c(5)])
 
 
 ```
@@ -176,7 +213,6 @@ lyrics_words <- lyrics_words %>%
 
 ```
 
-The lyrics were split into invidual words for analysis and common words (stop words) like a, on, the were removed. Table 2  shows number of words for analysis:
 
 ```{r print_words, include=FALSE}
 
@@ -188,27 +224,27 @@ lyrics_words %>%
 
 ```
 
-**Table X** \
-*Number of songs and words per album*
 
-Album |# Songs |# Words
+\begin{center}
+Table 1: Number of Songs and Words per Album
+\end{center} 
+
+Album |Songs |Words
 :-----|:-------|:------
 Iron Maiden: Number of the Beast |9 |800
 Iron Maiden: X Factor |11 |871
 Pharrell Williams: GIRL |12 |1437
 Taylor Swift: 1989 |16 |2000
 
-Table 1 shows the names of the songs of each album.
-
-\newpage
-**Table X** \
-*Songs per album*
+\begin{center}
+Table 2: List of Songs per Album
+\end{center} 
 
 Taylor Swift: 1989        |Pharrell Williams: GIRL    |Iron Maiden: Sign of the Cross   |Iron Maiden: Number of the Beast
 :-------------------------|:--------------------------|:-------------------------------|:--------------------------------
 Welcome to NY |Marilyn Monroe |Sign of the Cross | Invaders
 Blank Space         |Brand New      |Lord of the Flies | Children Of the Damned
-Style	| unter        |Man on the Ledge |The Prisoner
+Style	| Hunter        |Man on the Ledge |The Prisoner
 Out in the Woods    |Gush            |Fortunes of War   |22 Acacia Avenue
 All you had to... |Happy |Look for the Truth |Number Of The Beast
 Shake it off |Come Get It Bae |The Aftermath |Run to the Hills
@@ -220,43 +256,54 @@ This love	|It Girl |The Unbeliever
 I know places |Smile		
 Clean |			
 Wonderland |			
-You arein love |			
+You are in love |			
 New romantics |			
 
 
 
 ## Results
 
-To analyze text we start with x, then do y and then z.
+### Top Words Used by Artist 
 
-### Top words used on the lyrics
+As Figure 1 illustrates, Iron Maiden tends to use stronger and more negative language in their lyrics. In one album, prominent words include war, blood, and failing, while in the other, words such as beast, damned, and dead are more common. 
 
-We simply remove stop words and count and get this. Alternative we could use a more advanced way via tfidf to appendix
+Pharrell Williams, by contrast, predominantly expresses themes of happiness, often singing about girls and using energetic expressions such as woo-hoo to convey excitement. 
 
-This is relatively interesting but not useful since we know some artists use more words than others. So let's do the same but by album.
+Finally, Taylor Swift shows a strong inclination toward singing about love, while also incorporating more informal language, with frequent use of words like baby, ah, and eh.
+
+\begin{center}
+Figure 1: Count of Most Used Words per Album
+\end{center} 
+
+
 
 ```{r plot_top_album, echo=FALSE}
+#| fig-width: 10
+#| fig-height: 4
 
-# most common words per album
+
 lyrics_words %>% 
+  #filter(artist_album != "Iron Maiden: Number of the Beast") %>%
   count(artist_album, word, sort = TRUE) %>%
+  ungroup() %>%
   group_by(artist_album) %>%
   slice_max(n, n = 10, with_ties = FALSE) %>% 
-    ungroup() %>%
-    mutate(word = reorder(word, n)) %>%
-    ggplot(aes(n, word, fill = artist_album)) +
-    geom_col(fill = blue_palette[2],
-             show.legend = FALSE) +
-    facet_wrap(~artist_album, scales = "free", ncol = 2) +
-    labs(x = NULL,
-         y = NULL) +
-  cust_theme
+  #mutate(word = reorder(word, n)) %>%
+  ggplot(aes(n, reorder_within(word, n, artist_album)), fill=artist_album) +
+  geom_col(fill = palette[2],
+           show.legend = FALSE) +
+  facet_wrap(~artist_album, scales = "free", ncol = 4) +
+  labs(x = NULL,
+       y = NULL) +
+  theme_mine +
+        #panel.border = element_rect(colour = palette[1], fill=NA, linewidth=.5)) +
+  scale_y_reordered() 
+  #scale_color_brewer(palette = "Pastel1")
 
- 
 ```
 
 
-```{r print_clous, echo=FALSE}
+```{r print_clouds, echo=FALSE}
 
 #More informally we can see some wordclouds to get an idea of what they talk. This #just confirms what we saw above in more detail.
 
@@ -289,15 +336,28 @@ set.seed(666)
 ```
 
 
+### Sentiment Evolution in the Album
 
+How are emotions experienced throughout the albums? Figure 2 illustrates the sentiment evolution across some of the albums as the tracks progress line by line.  
 
-### Sentiment evolution in the album
-The top words above give an idea of what they talk about but it's just the start. The next thing is to see if they sing about happy, sad or angry stuff. Probably a bit of everything. 
+Several observations are worth highlighting. First, the number of lines varies significantly among the artists: Iron Maiden’s songs tend to have fewer lines compared to those of Pharrell Williams and Taylor Swift, indicating a more concise lyrical style. 
 
-We start with a simple analysis to see if the sentiment is positive or negative. In the chart below we see the sentiment evolution of the albums as the album progress where each bar represents a line in the song. Also note that number of lines varies and Maiden sings with less words.   
+More importantly, the sentiment patterns reveal distinct differences across the artists. Iron Maiden maintains a predominantly negative sentiment throughout their albums. In contrast, Pharrell Williams consistently exhibits a positive emotional tone. Taylor Swift, however, alternates between positive and negative sentiments, reflecting a more dynamic emotional journey across her album.
+
+### Main Feelings From each Album
+
+While analyzing the top words and sentiment evolution provides an initial understanding of the lyrical themes, it is only the beginning. The next step is to determine whether the artists predominantly sing about happiness, sadness, anger, or other emotions. As shown in Figure 3 for a sample of the albums, several key patterns emerge. 
+
+First, fear appears as a common emotion across all artists and albums, a point that will be explored further in the next section.
+
+\begin{center}
+Figure 2: Sentiment Evolution From Start to Finish per Album
+\end{center} 
 
 
 ```{r plot_sentiment, echo=FALSE}
+#| fig-width: 10
+#| fig-height: 4
 
 # plot sentiment change by album (calculated by line)
 albumns_sentiment <- lyrics_words %>%
@@ -307,41 +367,40 @@ albumns_sentiment <- lyrics_words %>%
   mutate(sentiment = positive - negative) %>%
   mutate(pos = sentiment >= 0 )
 
-ggplot(albumns_sentiment, aes(song_line_number, sentiment, fill = pos)) +
-  geom_col(show.legend = FALSE) +
-  facet_wrap(~artist_album, ncol = 2, scales = "free_x") +
-  cust_theme
+#ggplot(albumns_sentiment, aes(song_line_number, sentiment)) +
+ # geom_area(show.legend = FALSE, fill = palette[2]) +
+#  facet_wrap(~artist_album, ncol = 4, scales = "free_x") +
+#  theme_mine
+  #theme_minimal() +
+  #scale_color_brewer(palette = "Pastel1")
 
-#ggplot(albumns_sentiment, aes(song_line_number, sentiment, fill = pos)) +
- # geom_col(fill = blue_palette[2],
-  #         show.legend = FALSE) +
-  #facet_wrap(~artist_album, ncol = 2, scales = "free_x") +
-  #cust_theme
+albumns_sentiment <- albumns_sentiment %>%
+  filter(artist_album != "Iron Maiden: X Factor")
 
-#ggplot(data=albumns_sentiment, aes(x=song_line_number, y=sentiment, #group=artist_album, color=artist_album)) +
-#  geom_line(show.legend = FALSE)+
-#  #geom_point(show.legend = FALSE) +
-#  theme_minimal() +
-#  theme(legend.position="bottom")
-
-#ggplot(albumns_sentiment, aes(song_line_number, sentiment, fill = artist_album)) +
- # geom_line(color = blue_palette[2],
-  #         show.legend = FALSE) +
-  #facet_wrap(~artist_album, ncol = 2) +
-  #cust_theme
-
+ggplot(albumns_sentiment, aes(song_line_number, sentiment)) +
+  geom_area(show.legend = FALSE, fill = palette[4]) +
+  facet_wrap(~artist_album, ncol = 1, scales = "free_x") +
+  labs(x = NULL, y = NULL) +
+  theme_mine +
+  theme((axis.text.x=element_blank()))
 
 ```
 
-Several points to highlight from this chart. Iron Maiden tends to be very negative while Taylor Swift is mostly negative with some exceptions. Pharrell Williams on the contrary seems to be a very happy and uplifting singer. We will explore why and more in the next section.  
 
 
-### Main feelings from each album
 
-Another thing we can do is to see the sentiment for each album. Maiden is motly about fear, sadness and anger. While Pharrell sings about Joy and Trust. While Taylor seems to be happier but sometimes is inundated with sadness and fear. As we will see later this is a diffrent fear than the one Maiden shows.
+For Iron Maiden, the predominant emotions are negative, particularly anger and sadness. In contrast, Pharrell Williams’ lyrics are strongly associated with positive emotions such as happiness, joy, and trust. Taylor Swift presents a blend, often mixing joyful themes with sadness. 
+
+These findings are consistent with the sentiment evolution trends observed in the previous section.
+
+\begin{center}
+Figure 3: Top 5 Emotions Based on Lyrics per Album
+\end{center} 
+
 
 ```{r plot_sent_album, echo=FALSE}
-
+#| fig-width: 10
+#| fig-height: 4
 # top sentiments per album
 nrc_filtered <- nrc %>%
   filter(sentiment != "positive" & sentiment != "negative")
@@ -352,29 +411,78 @@ nrc_filtered <- nrc %>%
 #  group_by(artist_album) %>%
 #  slice(1:5)
 
-lyrics_words %>% 
+lyrics_words %>%
+  filter(artist_album != "Iron Maiden: Number of the Beast") %>%
   inner_join(nrc_filtered, relationship = "many-to-many") %>%
   count(artist_album, sentiment, sort = TRUE) %>%
-  #count(artist_album, word, sort = TRUE) %>%
+  ungroup() %>%
   group_by(artist_album) %>%
   slice_max(n, n = 5, with_ties = FALSE) %>% 
-    ungroup() %>%
-    mutate(sentiment = reorder(sentiment, n)) %>%
-    ggplot(aes(n, sentiment, fill = artist_album)) +
-    geom_col(fill = blue_palette[2],
+  ggplot(aes(n, reorder_within(sentiment, n, artist_album)),fill = artist_album) +
+    geom_col(fill = palette[2],
              show.legend = FALSE) +
-    facet_wrap(~artist_album, scales = "free") +
+    facet_wrap(~artist_album, scales = "free", ncol = 4) +
     labs(x = NULL,
          y = NULL) +
-  cust_theme
+    theme_mine +
+    scale_y_reordered()
+
+
+
+#top5 <- lyrics_words %>% 
+#  inner_join(nrc_filtered, relationship = "many-to-many") %>%
+ # count(artist_album, sentiment, sort = TRUE) %>%
+#  ungroup() %>%
+#  group_by(artist_album) %>%
+#  slice_max(n, n = 5, with_ties = FALSE)# %>%
+  #mutate(sentiment = factor(sentiment,
+   #                         levels=c("anger", "anticipation", "disgust", "fear",
+    #                                 "joy", "sadness", "surprise", "trust")))
+
+
+  #mutate(name = factor(name, levels=c("north", "north-east", "east", "south-east", "south", "south-west", "west", "north-west"))) %>%
+
+  
+#df$x = factor(df$x, levels=df[order(df$mixmpg), 'x'])
+#x marca
+
+#top5$sentiment = factor(top5$sentiment, levels=top5[order(top5$n), 'sentiment'])
+
+#ggplot(top5, aes(y = n, x = sentiment)) +
+                 #fill = ifelse(sentiment=="fear", palette[2], palette[3]))) +
+ # geom_bar(stat = "identity" ) +
+#  facet_wrap(~artist_album, scales = "free", ncol = 4) +
+ # coord_flip() +
+#  scale_fill_identity() +
+#  labs(x = NULL,
+#       y = NULL) +
+#  theme_mine
+
+
 
 ```
 
-### What are they afraid of?
+### What Are They Afraid of?
 
-A common feeling across all albums is the sentiment of fear. So next we explore the top fear words of each album. 
+As observed in the previous section, fear emerges as a common sentiment across all albums. A natural question that follows is: fear of what? Interestingly, it varies significantly between artists. 
+
+For Iron Maiden, fear is predominantly associated with violent or dark imagery, with top words including fight, beast, murder, kill, jail, and war. 
+
+Taylor Swift’s lyrics, on the other hand, center around relational fears, using words such as bad, mad, and hate. 
+
+Pharrell Williams’ results are somewhat more ambiguous and even humorous. Notably, moan appears among the top fear-associated words. While moan can carry a fearful connotation, within the context of his lyrics it is more likely related to sexual themes rather than fear. Similarly, the word hunter is flagged as negative by the sentiment dictionary; however, in his lyrics, it refers to "hunting for love," which is not inherently negative. 
+
+These examples highlight some of the limitations of unigram-based text mining, where single words are analyzed without context. A more detailed discussion of these limitations will be presented in a later section.
+
+\begin{center}
+Figure 4: Count of the Most Used Words in the Fear Category per Album
+\end{center} 
+
+
 
 ```{r plot_fear, echo=FALSE}
+#| fig-width: 10
+#| fig-height: 4
 
 nrc_fear <- get_sentiments("nrc") %>% 
   filter(sentiment == "fear")
@@ -388,49 +496,42 @@ lyrics_words %>%
   #ungroup() %>%
     mutate(word = reorder(word, n)) %>%
   ungroup() %>%  
-  ggplot(aes(n, word, fill = artist_album)) +
-    geom_col(fill = blue_palette[2],
+  ggplot(aes(n, reorder_within(word, n, artist_album), fill = artist_album)) +
+    geom_col(fill = palette[4],
              show.legend = FALSE) +
-    facet_wrap(~artist_album, scales = "free") +
+    facet_wrap(~artist_album, scales = "free", ncol = 4) +
     labs(x = NULL,
          y = NULL) +
-  cust_theme
+  theme_mine +
+  scale_y_reordered() 
+  #scale_color_brewer(palette = "Pastel1")
 
-```
-
-So even though they are all fear words, the meaning is different. TAke Iron Maiden is talking about fight, kill, murder, beast, war. Whille Pharrell talks about his feelings and moan. Even though hunter appears it's a love song about hunting for his girl. Taylor swift with bad, hate and mad clearly is talking about a bad romance. 
-
-### Positive and negative words 
-Exploring the words further we can take a look at the most positive and negative words per album. 
-
-```{r pos_neg, include=FALSE}
-
-# LEAVE OTHER FOR NOW
-lyrics_words %>%
-  inner_join(bing) %>%
-  count(artist_album, sentiment, word, sort = TRUE) %>%
-  ungroup() %>%
-  group_by(artist_album, sentiment) %>%
-  slice_max(n, n = 7, with_ties = FALSE) %>%
-    mutate(word = reorder(word, n)) %>%
-    ggplot(aes(n, word, fill = sentiment)) +
-    geom_col(show.legend = FALSE, fill = blue_palette[3]) +
-    facet_wrap(~artist_album+sentiment, 
-               scales = "free",
-               ncol = 4) +
-    labs(x = "Contribution to sentiment",
-         y = NULL) +
-    #ggtitle(albums_to_parse[i]) +
-    theme_minimal()
-
+#  ggplot(aes(n, reorder_within(sentiment, n, artist_album)),fill = artist_album) +
 
 
 ```
 
+### Positive and Negative Words 
+
+To further explore the lyrics, we examined the most positive and negative words for each album. Two of these albums are displayed in Figure 5. 
+
+In the case of Iron Maiden, free emerges as one of the top positive words. While it is indeed categorized as positive, a closer reading of the lyrics reveals that it often refers to "running free" from the police, which is not necessarily a purely positive theme. Similarly, hallowed appears as a top positive word, but it is primarily used in the song Hallowed Be Thy Name, which tells the story of a prisoner awaiting execution. Thus, although the word carries a positive connotation, the surrounding context is far more somber. In contrast, the negative words identified align well with expectations, including terms such as damned, dead, and burning. 
+
+For Pharrell Williams, the results highlight a strong emphasis on positivity, with woo (as part of woo-hoo) standing out among the top positive words. As expected, the number of negative words is significantly lower in comparison. 
+
+In the case of Taylor Swift (not shown), the word love naturally leads the list of positive words. Regarding negative words, most align with expected emotional tones; however, one example worth noting is shake. Although shake is classified as negative by the sentiment dictionary, in the context of Swift’s lyrics, it refers to "shaking off" critics and negativity while celebrating a carefree, joyful life. Thus, the word itself is not used negatively within the song. 
+
+### How Negative is Each Song?
+
+A complementary approach is to analyze the albums at the song level to better understand how each track contributes to the overall sentiment of the album. As shown in Figure 6, Iron Maiden's songs tend to have a more negative sentiment compared to those of Pharrell Williams. 
+
+\begin{center}
+Figure 5: Count of the top 10 Most Positive and Negative Words per Album
+\end{center} 
 
 ```{r print_top_words_by_sentiment, echo=FALSE}
-
-# ABOVE OR THIS ONE?
+#| fig-width: 10
+#| fig-height: 4
 
 albums_to_parse <- unique(lyrics_words$artist_album)
 
@@ -450,42 +551,98 @@ print_pos_neg_words <- function(i){
     mutate(word = reorder(word, n)) %>%
     ggplot(aes(n, word, fill = sentiment)) +
     geom_col(show.legend = FALSE,
-             fill = blue_palette[1]) +
+             fill = palette[2]) +
     facet_wrap(~sentiment, scales = "free_y") +
     labs(x = "Contribution to sentiment",
          y = NULL) +
     ggtitle(albums_to_parse[i]) +
-    theme_minimal()
+    theme_mine
   
   print(myplot)
   
 }
 
-print_pos_neg_words(1) #beast
+#print_pos_neg_words(1) #beast
 
-print_pos_neg_words(3) # pharrel
+###############
+#redo
 
+bing_pos <- bing %>%
+  filter(sentiment == "positive")
 
+bing_neg <- bing %>%
+  filter(sentiment == "negative")
 
+#get top10
+top10 <- lyrics_words %>%
+  inner_join(bing_pos) %>%
+  count(artist_album, word, sort = TRUE) %>%
+  group_by(artist_album) %>%
+  slice_max(n, n = 10, with_ties = FALSE) %>%
+  mutate (sentiment = "positive")
 
+low10 <- lyrics_words %>%
+  inner_join(bing_neg) %>%
+  count(artist_album, word, sort = TRUE) %>%
+  mutate(n = -n) %>%
+  group_by(artist_album) %>%
+  slice_min(n, n = 10, with_ties = FALSE) %>%
+  mutate (sentiment = "negative")
+
+top_low_10 <- rbind(top10, low10)
+
+top_low_10$word <- ifelse(top_low_10$artist_album == "Iron Maiden: Number of the Beast" & top_low_10$word == "smile", " smile", top_low_10$word) 
+
+top_low_10$word <- ifelse(top_low_10$artist_album == "Iron Maiden: Number of the Beast" & top_low_10$word == "easy", " easy", top_low_10$word)
+
+top_low_10 <- top_low_10 %>%
+  filter(artist_album %in% c('Iron Maiden: Number of the Beast', 'Pharrell Williams: GIRL'))
+
+  ggplot(top_low_10, aes(n, reorder_within(word, n, artist_album)), fill=sentiment) +
+  geom_col(fill = palette[2],
+           show.legend = FALSE) +
+  facet_wrap(~artist_album, scales = "free", ncol = 4) +
+  labs(x = NULL,
+       y = NULL) +
+  theme_mine +
+        #panel.border = element_rect(colour = palette[1], fill=NA, linewidth=.5)) +
+  scale_y_reordered() 
+  #scale_color_brewer(palette = "Pastel1")
+
+#get bottom10
+#bind
+#plot
+#s2s 2 albums
 
 ```
 
 
-Maiden best is interesting. Free is positive but it's actually from running free and it's someone escaping from the police. Hallowed is also from a song called hallowed by the name from someone on death row. so this can be misleading.
-
-Pharrell, appreciate positivism with woo (part of woo-hoo) and in general talks about happiness. Moan comes from sex so huhh.
-
-Taylor we can see that likes to talk about love - good or bad? and shake is that from shake what? can be from shake the body soo...
 
 
-### How negative is each song?
+```{r print_phar, echo=FALSE}
+#| fig-width: 10
+#| fig-height: 4
 
-A next obvious quesitno is beyond words. How does each song contribute to the feelings shows above. For that we calculate a negative ratio of each song which is basically # of negative words over total words so a higher number means a negative song. results are this.
+#print_pos_neg_words(3) # pharrel
 
+```
+
+
+
+
+For example, Children of the Damned addresses the plight of homeless children and their suffering, which contributes to the negative tone of the album. 
+
+In the case of Taylor Swift, one notable instance is the song Shake It Off, which is incorrectly categorized as negative due to the misinterpretation of the word shake, as discussed earlier. Another example is Bad Blood, a song about a failed relationship that transitions from love to hate. This shift in emotion aligns with the song’s negative sentiment, making it a fitting example of how sentiment analysis can reflect the thematic content of the song. 
+
+\begin{center}
+Figure 6: Negativity Score per Song
+\end{center} 
 
 
 ```{r neg_songs, echo=FALSE}
+#| fig-width: 10
+#| fig-height: 4
+
 # plot / calculate most negative songs per album
 
 words_per_song <- lyrics_words %>%
@@ -499,6 +656,7 @@ negative_words_per_song <- lyrics_words %>%
   semi_join(negative)
 
 negative_ratio <- negative_words_per_song %>%
+  filter(artist_album != "Iron Maiden: Number of the Beast") %>%
   group_by(artist_album, song) %>%
   summarise(negativewords =n()) %>%
   left_join(words_per_song, by = c("artist_album", "song")) %>%
@@ -506,25 +664,27 @@ negative_ratio <- negative_words_per_song %>%
   ungroup()
 
 ggplot(negative_ratio, aes(song, ratio, fill = artist_album)) +
-  geom_col(show.legend = FALSE, fill = blue_palette[2]) +
-  facet_wrap(~artist_album, ncol = 2, scales = "free_y") +
+  geom_col(show.legend = FALSE, fill = palette[4]) +
+  facet_wrap(~artist_album, ncol = 4, scales = "free_y") +
   coord_flip() +
-  theme_minimal()
+  labs(x = NULL, y = NULL) +
+  theme_mine 
 
 ```
 
-Makes sense for Maiden cause Chilre of damned talks about homeless kids and 2am talks about contemplating suicidine.
+### Looking Beyond One Word
 
-Not surpriseing Williams is an optimistic fellow.
+Previously, we discussed text analysis primarily at the individual word level. While this approach is useful, it has certain limitations, as previously highlighted. An obvious next step is to examine the lyrics in terms of word pairs or bigrams, which are shown in Figure 7. 
 
-And Taylow, Shake it off, is misleading cause it's not a negative song. it's more about somebody that likes to go out and party and "shakes off" criticisim from others so could be positive. example fo limitation. next is bad blood, which is about a failed relatioship that went from love to hate so it makes sense. 
 
-### Looking beyond one word
-
-As seen, one word is limited so here we look at combinations of two words that give more context. So what are the top 10 combinations of pairs of words per album?
-
+\begin{center}
+Figure 7: Top 10 Pairs of Words Used in Each Album 
+\end{center} 
 
 ```{r bigram, echo=FALSE}
+#| fig-width: 10
+#| fig-height: 4
+
 # 4 n-grams
 
 lyrics_df$lyrics_clean <- removeWords(lyrics_df$lyrics, stop_words$word)
@@ -556,27 +716,33 @@ bigrams_tfidf <- bigrams_united %>%
   arrange(desc(tf_idf))
 
 bigrams_tfidf %>%
+  filter(artist_album != "Iron Maiden: Number of the Beast") %>%
   group_by(artist_album) %>%
   slice_max(tf_idf, n = 10, with_ties = FALSE) %>%
   ungroup() %>%
   ggplot(aes(tf_idf, fct_reorder(bigram, tf_idf), fill = artist_album)) +
-  geom_col(show.legend = FALSE, fill=blue_palette[1]) +
-  facet_wrap(~artist_album, ncol = 2, scales = "free") +
-  labs(x = "tf-idf", y = NULL) +
-  theme_minimal()
+  geom_col(show.legend = FALSE, fill=palette[2]) +
+  facet_wrap(~artist_album, ncol = 4, scales = "free_y") +
+  labs(x = NULL, y = NULL) +
+  theme_mine
 
 ```
+A few key points are worth highlighting here. For Iron Maiden, the word fortune is classified as positive, but in context, it is often used in association with war, referring to the negative consequences of conflict (e.g., "the fortunes of war"). 
 
-This gives more insight. for example for xfactor above fortune was positive but it's really talking about war fortunes which is an irony for all the bad stuff that happends after the wars. 
+For Pharrell Williams, positivity is emphasized by word pairings such as happy and clap, as well as cheers and cheers, which reinforce the celebratory tone of his lyrics. 
 
-Interesting to see how Williams and Pharrell don't use real words and more "ah ah", "eh eh", "woo hoo". 
+Taylor Swift, on the other hand, tends to use simpler and more repetitive phrasing in her lyrics. Notable examples include the frequent repetition of words like ah ah, eh eh, and fake fake, which contribute to the conversational and emotionally charged nature of her songs. 
 
-### Network graphs of these bigrams
 
-naturally we want to see how these words are interconnected to see about topics they talk about. 
+### Mapping Words as Networks 
+
+Furthermore, we explore how words interconnect in the lyrics. While the size of song lyrics is smaller compared to a book, the results are still insightful and offer interesting perspectives.
 
 
 ```{r nw, echo=FALSE}
+#| fig-width: 8
+#| fig-height: 5
+
 # function that takes album name of album and ngram filter 
 # and plots the network graph by album
 plot_graph <- function(album_to_plot, num){
@@ -596,36 +762,72 @@ plot_graph <- function(album_to_plot, num){
   
   set.seed(97702)
   ggraph(bigram_graph, layout = "fr") +
-    geom_edge_link() +
-    geom_node_point(color = blue_palette[3], size = 3) +
+    geom_edge_link(color = palette[1]) +
+    geom_node_point(color = palette[4], size = 5) +
     geom_node_text(aes(label = name), vjust = 1, hjust = 1) +
-    theme_minimal()
+    theme_void()
   
 }
 
+#ggraph(bigram_graph, layout = "fr") +
+#  geom_edge_link(aes(edge_alpha = n), show.legend = FALSE,
+#                 arrow = a, end_cap = circle(.07, 'inches')) +
+#  geom_node_point(color = "lightblue", size = 5) +
+#  geom_node_text(aes(label = name), vjust = 1, hjust = 1) +
+#  theme_void()
+
+
+
+
 ```
 
+Due to space constraints, we only present the network for two albums. We observe that the more elaborate combinations of words provide valuable insights. For instance, for Iron Maiden the word run is connected to several terms such as hills and lives. This makes sense within the context of their song Run to the Hills, which describes the act of running to the hills to escape from ruthless conquerors. 
+
+When contrasting these results with Figure 9, we observe that Taylor Swift's word networks revolve around more personal and adventurous themes, such as "wanna hug", "lost queen", and other similarly emotive expressions.
+
+\begin{center}
+Figure 8: Network of Top Bi-grams for Iron Maiden's Number of the Beast Album
+\end{center} 
 
 ```{r plotsnw, echo=FALSE}
+#| fig-width: 8
+#| fig-height: 4
+
 plot_graph(albums_to_parse[1], 1) #beast
 
-
-plot_graph(albums_to_parse[4], 3) #taylor
 ```
-taylor, she talks about all she;s gonna do as is shake. but more context is needed cause paople are gonna hate her. another interesting, is she's asking about stay with someone with bad blood.
-
-for williams we can see girl connected to dirty gilr and hey girl and hey baby so sounds about happy love. he also wants to hug.
-
-Maiden beast, see how more context is given. run is connected to varios words and when reading the lyrics one can see that its about running to the hills (escaping), and run for your lives (escaping). 
 
 
-### Impact of hegated words
-
-Another importantthing to consider is that happy when doing one word is treated as positive so let's say "i am happy" and "i am not happy" will read happy and that is that. so that is why combining two words give context. so it's intersting to see what words were kind of misclassified with negated words before. so i see what words were c("not", "no", "never", "without") after thse ones and how much they misled the scores.
 
 
+
+
+\begin{center}
+Figure 9: Network of Top Bi-grams for Taylor Swift's 1989 Album
+\end{center} 
+
+```{r plotsnw2, echo=FALSE}
+#| fig-width: 8
+#| fig-height: 4
+
+plot_graph(albums_to_parse[3], 1) 
+
+```
+
+### Impact of Negated Words
+
+Finally, it is crucial to consider the impact of negated words on sentiment analysis. For example, the word happy is classified as positive when analyzed in isolation, but its meaning can change significantly in certain contexts. For instance, "I am happy" is positive, while "I am not happy" should be interpreted as negative. However, sentiment analysis tools often misclassify such negated phrases by treating happy as positive regardless of context. Therefore, it’s important to identify words that are preceded by negators such as "not", "no", "never", or "without" and examine how they may mislead sentiment scores.
+
+As shown in Figure 10, the word worse is classified as highly negative, but in the context of "I am not worse", it would actually convey a more positive sentiment. This issue applies to other words as well. A clear example is the word better, which is positive on its own, but if preceded by "not", it takes on a negative meaning.
+
+\begin{center}
+Figure 10: Top Words Misclassified by Preceded Negated Words in Analysis
+\end{center} 
 
 ```{r print_negated, echo=FALSE}
+#| fig-width: 10
+#| fig-height: 4
+
 # impact of negated words
 negation_words <- c("not", "no", "never", "without")
 
@@ -637,126 +839,71 @@ negated_words <- bigrams_separated %>%
 negated_words %>%
   mutate(contribution = n * value) %>%
   arrange(desc(abs(contribution))) %>%
-  head(20) %>%
+  head(14) %>%
   mutate(word2 = reorder(word2, contribution)) %>%
-  ggplot(aes(n * value, word2, fill = n * value > 0)) +
-  geom_col(show.legend = FALSE, fill =  blue_palette[1]) +
-  labs(x = "Sentiment value * number of occurrences",
-       y = "Words preceded by \"not\"") +
-  theme_minimal()
+  ggplot(aes(contribution, word2))+ 
+             #fill = palette[2]))+
+             #fill = ifelse(contribution >=0 , palette[2], palette[3]))) +
+  geom_col(show.legend = FALSE,
+           fill = palette[2]) +
+  labs(x = "\n Impact = Sentiment value * number of occurrences",
+       y = NULL) +
+  theme_mine +
+  scale_color_manual()
+
+
 
 
 ```
 
-so for example, worse its the most negative here. but how about it say i am not worse, that would kind of be positive. 
+```{r include=FALSE}
 
-let's take like, if it's never like then we have a problem.
+require(ggstatsplot)
+require(gapminder)
 
-### A note on topic modeling 
+head(gapminder)
 
-Finally imagine we didn't have the albums. we just knew songs. well there is a way to group them by "topic". so I ovbiously tune the algo to 4 topics. see appendix  
+g <- gapminder %>%
+  filter(continent == "Europe")
 
+ggdotplotstats(
+  data = g,
+  y = country, 
+  x = lifeExp,
+  results.subtitle = FALSE,
+  centrality.plotting = FALSE,
+  point.args = list(color = palette[4], size = 3, shape = 16)
+)
+
+```
 
 
 
 ## Conclusions
-1. one word analysis can be misleading
+1. *Text mining techniques* prove to be highly effective for processing song lyrics. Basic methods such as word counting, tf-idf, unigram analysis, and sentiment analysis can provide valuable insights into the primary vocabulary and emotional tone of each artist.
+
+2. *However, there are notable limitations* to consider. The presence of negated words can significantly distort sentiment analysis results and should not be overlooked. Therefore, an analysis using bigrams is recommended to capture more nuanced relationships between words and their context.
+
+3. *Lyrics differ by genre*. Iron Maiden’s lyrics tend to be more intricate, concise, and meaning-driven, while popular music (such as pop) often relies on simpler, more repetitive language that may prioritize catchiness over depth.
+
+4. *Iron Maiden’s lyrics are predominantly negative*, not in a purely pessimistic sense, but rather as a reflection of profound societal issues. Their songs often explore themes such as war, suffering, and existential questions, presenting a more complex emotional landscape.
 
 
 ## References
 
-## Appendix
 
-\newpage
-Appendix 1: TFIDF
+1. AZLyrics. (n.d.). AZLyrics – Song lyrics from A to Z. Retrieved April 7, 2025, from https://www.azlyrics.com/
 
-```{r print_tfidf, echo=FALSE}
-#
-# tf-idf
+2. Bird, S., Klein, E., & Loper, E. (n.d.). Natural Language Toolkit. Nltk.org. Retrieved April 7, 2025, from https://www.nltk.org/
 
-album_words <- lyrics_df %>%
-  unnest_tokens(word, lyrics) %>%
-  count(artist_album, word, sort = TRUE)
+3. Datanovia. (2021, October 1). ggplot2 themes gallery. Datanovia. https://www.datanovia.com/en/blog/ggplot-themes-gallery/
 
-total_words <- album_words %>% 
-  group_by(artist_album) %>% 
-  summarize(total = sum(n))
+4. Holtz, Y. (n.d.). Reorder a variable in ggplot2. The R Graph Gallery. Retrieved April 7, 2025, from https://r-graph-gallery.com/267-reorder-a-variable-in-ggplot2.html
 
-album_words <- left_join(album_words, total_words)
+5. Rafael, F. R. (2021, March 7). Sentiment analysis with tidytext. RPubs. https://rpubs.com/rafrys/723764
 
-album_tf_idf <- album_words %>%
-  bind_tf_idf(word, artist_album, n)
+6. Silge, J., & Robinson, D. (n.d.). Text Mining with R. Tidytextmining.com. Retrieved April 7, 2025, from https://www.tidytextmining.com/
 
-#album_tf_idf %>%
-#  select(-total) %>%
-#  arrange(desc(tf_idf))
+7. Wickham, H. (n.d.). ggplot2: Elegant graphics for data analysis. Ggplot2-book.org. Retrieved April 7, 2025, from https://ggplot2-book.org/
 
-album_tf_idf %>%
-  group_by(artist_album) %>%
-  slice_max(tf_idf, n = 10) %>%
-  ungroup() %>%
-  ggplot(aes(tf_idf, fct_reorder(word, tf_idf), fill = artist_album)) +
-  geom_col(show.legend = FALSE, fill = blue_palette[4]) +
-  facet_wrap(~artist_album, ncol = 2, scales = "free") +
-  labs(x = "tf-idf", y = NULL) + 
-  theme_minimal()
-
-```
-
-\newpage
-Appendix 2
-
-```{r}
-print_pos_neg_words(2)
-print_pos_neg_words(4)
-```
-
-\newpage
-Appendix 3
-
-```{r}
-plot_graph(albums_to_parse[2], 1) #xf
-
-plot_graph(albums_to_parse[3], 2)
-
-```
-
-\newpage
-Appendix 4
-```{r topic, echo=FALSE}
-# LDA topic model on albums
-
-word_counts_beast <- lyrics_words %>%
-  #filter(artist_album == "Iron Maiden: Number of the Beast") %>%
-  count(artist_album, word, sort = TRUE)
-
-beast_dtm <- word_counts_beast %>%
-  cast_dtm(artist_album, word, n)
-
-#beast_dtm
-
-lda <- LDA(beast_dtm, k = 4, control = list(seed = 1234))
-#lda
-
-topics <- tidy(lda, matrix = "beta")
-
-#topics
-
-top_terms <- topics %>%
-  group_by(topic) %>%
-  slice_max(beta, n = 10) %>% 
-  ungroup() %>%
-  arrange(topic, -beta)
-
-top_terms %>%
-  mutate(term = reorder_within(term, beta, topic)) %>%
-  ggplot(aes(beta, term, fill = factor(topic))) +
-  geom_col(show.legend = FALSE, fill = blue_palette[1]) +
-  facet_wrap(~ topic, scales = "free") +
-  scale_y_reordered() +
-  theme_minimal()
-
-```
-
-if I compre this charts with above it would be easy to identify the 4 albums with these 4 topics.
 

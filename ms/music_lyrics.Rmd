@@ -13,7 +13,7 @@ output:
 ---
 
 ## Introduction 
-Do heavy metal bands like Iron Maiden only sing about dark feelings and the devil? Do pop artists like Taylor Swift and Pharrell Williams only sing about love and happy feelings? Is there a way to apply text-mining techniques to understand song lyrics without reading them all? 
+Do heavy metal bands such as Iron Maiden exclusively explore themes of darkness and the occult in their lyrics? Conversely, do pop artists like Taylor Swift and Pharrell Williams focus solely on themes of love and positive emotions? Is it possible to employ text-mining techniques to analyze and understand the thematic content of song lyrics without the need for exhaustive manual reading? 
 
 I am deeply passionate about music and data science, and these questions sparked the motivation for this research. The purpose of this paper is to apply key text analytics techniques to explore and compare the lyrics of different artists. I intentionally selected Iron Maiden — my favorite band since I was 10 years old — alongside very different artists to create a contrasting analysis. 
 

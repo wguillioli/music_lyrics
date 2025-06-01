@@ -6,10 +6,7 @@ Do heavy metal bands such as Iron Maiden exclusively explore themes of darkness 
 In this project, I apply basic text-mining techniques to these lyrics. I begin by identifying the most common words and then examine the emotional tone of these words. Next, I explore how individual words contribute to the overall emotional landscape of an album. Finally, I investigate how words combine together to provide deeper insights, highlighting some of the limitations of relying solely on single-word or unigram analysis.
 
 ### Data
-The lyrics were obtained from AZLyrics. Each song is an individual text file under each album. See them [here](data/).
+The lyrics dataset was sourced from AZLyrics, with each song stored as an individual text file organized by album. The dataset can be accessed [here](data/).
 
 ### Manuscript
-To see the R code and the generated final report in PDF format visit the [ms folder](ms/). To see the PDF click [here](ms/music_lyrics.pdf).
-
-### Author
-Walter Guillioli
+The accompanying R code and the final report in PDF format are available in the [manuscript folder](ms/). To see the PDF click [here](ms/music_lyrics.pdf).
